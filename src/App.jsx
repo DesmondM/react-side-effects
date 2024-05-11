@@ -7,27 +7,35 @@ import DeleteConfirmation from './components/DeleteConfirmation.jsx';
 import logoImg from './assets/logo.png';
 import {sortPlacesByDistance} from './loc.js'
 
+const storedIds = JSON.parse(localStorage.getItem('selectedPlaces'))||[]
+const storedPlaces = storedIds.map((id)=>
+  AVAILABLE_PLACES.find((place)=>place.id===id)
+)  
 function App() {
+
   const modal = useRef();
   const selectedPlace = useRef();
-  const [pickedPlaces, setPickedPlaces] = useState([]);
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [availablePlaces, setAvailablePlaces] = useState([]);
+  const [pickedPlaces, setPickedPlaces] = useState(storedPlaces);
   const [placesByDistance, setPlacesByDistance]= useState([])
 
   useEffect(()=>{
       navigator.geolocation.getCurrentPosition((position)=>{
-        const sortedPlaces= sortPlacesByDistance(AVAILABLE_PLACES, position.coords.latitude, position.coords.longitude)
+        const sortedPlaces= sortPlacesByDistance(AVAILABLE_PLACES, 
+            position.coords.latitude, position.coords.longitude)
         setPlacesByDistance(sortedPlaces)
       } )
       
   }, [])
 
   function handleStartRemovePlace(id) {
-    modal.current.open();
+    setModalOpen(true);
     selectedPlace.current = id;
   }
 
   function handleStopRemovePlace() {
-    modal.current.close();
+    setModalOpen(false);
   }
 
   function handleSelectPlace(id) {
@@ -38,14 +46,42 @@ function App() {
       const place = AVAILABLE_PLACES.find((place) => place.id === id);
       return [place, ...prevPickedPlaces];
     });
+    const storedIds =JSON.parse(localStorage.getItem('selectedPlaces'))||[]
+    pickedPlaces.forEach((place) => {
+        if (storedIds.indexOf(place.id) === -1) {
+          storedIds.push(place.id);
+        }
+      });
+      localStorage.setItem('selectedPlaces', JSON.stringify(storedIds));
+      
   }
 
-  function handleRemovePlace() {
-    setPickedPlaces((prevPickedPlaces) =>
-      prevPickedPlaces.filter((place) => place.id !== selectedPlace.current)
-    );
-    modal.current.close();
+  function handleRemovePlace(){
+    setPickedPlaces((prevPickedPlaces)=>
+    prevPickedPlaces.filter((place)=>place.id!==selectedPlace.current))
+    setModalOpen(false)
+    const storedIds = JSON.parse(localStorage.getItem('selectedPlaces'))||[]
+    localStorage.setItem(
+        'selectedPlaces',
+        JSON.stringify(storedIds.filter((id)=>id!==selectedPlace.current))
+    )
   }
+
+  const storedIds = JSON.parse(localStorage.getItem('selectedPlaces'))|| []
+  pickedPlaces.forEach((place) => {
+    if (storedIds.indexOf(place.id) === -1) {
+      storedIds.push(place.id);
+    }
+  });
+  localStorage.setItem('selectedPlaces', JSON.stringify(storedIds));
+  
+
+//   function handleRemovePlace() {
+//     setPickedPlaces((prevPickedPlaces) =>
+//       prevPickedPlaces.filter((place) => place.id !== selectedPlace.current)
+//     );
+//     modal.current.close();
+//   }
 
   return (
     <>
